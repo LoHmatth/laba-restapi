@@ -1,0 +1,220 @@
+ Шаги по созданию приложения
+
+ 1. Создайте новый проект Spring Boot
+
+Вы можете создать новый проект Spring Boot с помощью Spring Initializr. Перейдите на [Spring Initializr](https://start.spring.io/) и выберите следующие параметры:
+
+- **Project**: Maven Project
+- **Language**: Java
+- **Spring Boot**: выберите последнюю стабильную версию
+- **Dependencies**:
+  - Spring Web
+  - Spring Data JPA
+  - H2 Database (для встраиваемой базы данных)
+  - Spring Boot DevTools
+  - Springdoc OpenAPI UI (для Swagger)
+
+Сгенерируйте проект и скачайте его.
+
+ 2. Структура проекта
+
+Структура вашего проекта будет выглядеть так:
+
+```
+src
+├── main
+│   ├── java
+│   │   └── com
+│   │       └── example
+│   │           └── productapi
+│   │               ├── Product.java
+│   │               ├── ProductRepository.java
+│   │               ├── ProductService.java
+│   │               ├── ProductController.java
+│   │               └── ProductApiApplication.java
+│   └── resources
+│       ├── application.properties
+│       └── data.sql
+└── test
+```
+
+ 3. Настройка `application.properties`
+
+Настройте файл `application.properties` для подключения к H2 базе данных:
+
+```properties
+spring.h2.console.enabled=true
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+```
+
+ 4. Создание сущности `Product`
+
+Создайте класс `Product.java`, который будет представлять товар:
+
+```java
+package com.example.productapi;
+
+import javax.persistence.*;
+
+@Entity
+public class Product {
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String description;
+    private double price;
+
+    // Getters and Setters
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+}
+```
+
+5. Создание репозитория `ProductRepository`
+
+Создайте интерфейс `ProductRepository.java` для работы с базой данных:
+
+```java
+package com.example.productapi;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface ProductRepository extends JpaRepository<Product, Long> {
+}
+```
+
+ 6. Создание сервиса `ProductService`
+
+Создайте класс `ProductService.java` для бизнес-логики:
+
+```java
+package com.example.productapi;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class ProductService {
+    @Autowired
+    private ProductRepository productRepository;
+
+    public List<Product> getAllProducts() {
+        return productRepository.findAll();
+    }
+
+    public Product getProductById(Long id) {
+        return productRepository.findById(id).orElse(null);
+    }
+
+    public Product saveProduct(Product product) {
+        return productRepository.save(product);
+    }
+}
+```
+
+7. Создание контроллера `ProductController`
+
+Создайте класс `ProductController.java` для обработки HTTP-запросов:
+
+```java
+package com.example.productapi;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+    @Autowired
+    private ProductService productService;
+
+    @GetMapping
+    public List<Product> getAllProducts() {
+        return productService.getAllProducts();
+    }
+
+    @GetMapping("/{id}")
+    public Product getProductById(@PathVariable Long id) {
+        return productService.getProductById(id);
+    }
+
+    @PostMapping
+    public Product createProduct(@RequestBody Product product) {
+        return productService.saveProduct(product);
+    }
+}
+```
+
+8. Добавление данных в `data.sql`
+
+Создайте файл `data.sql` в `src/main/resources`, чтобы заранее заполнить базу данными:
+
+```sql
+INSERT INTO product (name, description, price) VALUES ('Laptop', 'High performance laptop', 1200.00);
+INSERT INTO product (name, description, price) VALUES ('Smartphone', 'Latest model smartphone', 800.00);
+INSERT INTO product (name, description, price) VALUES ('Tablet', 'Lightweight tablet', 400.00);
+```
+
+#### 9. Настройка Swagger (OpenAPI)
+
+Добавьте в зависимости `pom.xml` библиотеку `springdoc-openapi-ui`:
+
+```xml
+<dependency>
+    <groupId>org.springdoc</groupId>
+    <artifactId>springdoc-openapi-ui</artifactId>
+    <version>1.6.6</version>
+</dependency>
+```
+
+ 10. Запуск приложения
+
+Теперь вы готовы запустить приложение. В терминале выполните команду:
+
+```bash
+mvn spring-boot:run
+```
+11. Проверка API и Swagger UI
+
+- **API**: Перейдите по адресу `http://localhost:8080/api/products` для получения списка товаров.
+- **Swagger UI**: Перейдите по адресу `http://localhost:8080/swagger-ui.html` для просмотра документации API.
